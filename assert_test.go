@@ -1,8 +1,8 @@
 package assert_test
 
 import (
-	"assert"
 	"fmt"
+	"github.com/waybeams/assert"
 	"reflect"
 	"testing"
 )
