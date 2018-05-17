@@ -5,54 +5,34 @@ package assert
 import (
 	"errors"
 	"fmt"
-	"math"
 	"reflect"
 	"regexp"
-	"testing"
 )
 
-func messagesToString(mainMessage string, optMessages ...string) (string, error) {
+func messagesToStringP(mainMessage string, optMessages ...string) string {
 	switch len(optMessages) {
 	case 0:
-		return mainMessage, nil
+		return mainMessage
 	case 1:
-		return fmt.Sprintf("%s %s", mainMessage, optMessages[0]), nil
+		return fmt.Sprintf("%s. %s", mainMessage, optMessages[0])
 	case 2:
-		return fmt.Sprintf("%s %s\n%s", mainMessage, optMessages[0], optMessages[1]), nil
+		return fmt.Sprintf("%s %s\n%s", mainMessage, optMessages[0], optMessages[1])
 	default:
-		return "", errors.New("Custom assertion provided with unexpected messages")
-
+		panic("Custom assertion provided with unexpected messages")
 	}
+	return ""
 }
 
-func float64EqualsInt(floatValue float64, intValue int) bool {
-	intPart, div := math.Modf(floatValue)
-	if div == 0.0 && int(intPart) == intValue {
-		return true
-	}
-	return false
-}
-
-func valueToKindAndString(value interface{}) (kind reflect.Kind, asString string) {
-	kind = reflect.ValueOf(value).Kind()
-	return kind, fmt.Sprintf("%v", value)
-}
-
-func isTrue(t testing.TB, value bool, mainMessage string, message ...string) {
+func isTrueP(value bool, mainMessage string, messages ...string) {
 	if !value {
-		msg, msgErr := messagesToString(mainMessage, message...)
-		if msgErr != nil {
-			t.Error(msgErr)
-			return
-		}
-		t.Error(errors.New(msg).Error())
+		msg := messagesToStringP(mainMessage, messages...)
+		panic(errors.New(msg).Error())
 	}
-
 }
 
 // Panic fails if the provided handler does not trigger a panic that includes an error
 // or message that matches the provided expression string.
-func Panic(t testing.TB, expr string, handler func()) {
+func PanicP(expr string, handler func()) {
 	defer func() {
 		r := recover()
 		if r != nil {
@@ -67,24 +47,19 @@ func Panic(t testing.TB, expr string, handler func()) {
 			default:
 				err = errors.New("Unknown panic")
 			}
-			Match(t, expr, err.Error())
+			MatchP(expr, err.Error())
 		} else {
-			t.Error("Did not receive expected panic")
+			panic("Did not receive expected panic")
 		}
 	}()
 	handler()
 }
 
 // StrictEqual fails if the provided values are not == to one another.
-func StrictEqual(t testing.TB, found interface{}, expected interface{}, message ...string) {
+func StrictEqualP(found interface{}, expected interface{}, messages ...string) {
 	if found != expected {
 		mainMessage := fmt.Sprintf("Expected %v to STRICTLY equal %v", found, expected)
-		msg, err := messagesToString(mainMessage, message...)
-		if err != nil {
-			t.Error(err)
-			return
-		}
-		t.Error(msg)
+		panic(messagesToStringP(mainMessage, messages...))
 	}
 }
 
@@ -93,13 +68,8 @@ func StrictEqual(t testing.TB, found interface{}, expected interface{}, message 
 // equal to 1.
 // This coercion helps with test brevity and flexibility. If you'd like
 // something more precise, use StrictEqual instead.
-func Equal(t testing.TB, found interface{}, expected interface{}, message ...string) {
+func EqualP(found interface{}, expected interface{}, messages ...string) {
 	if found != expected {
-		msg, msgErr := messagesToString("", message...)
-		if msgErr != nil {
-			t.Error(msgErr)
-			return
-		}
 		kindA := reflect.ValueOf(found).Kind()
 		switch kindA {
 		case reflect.Bool:
@@ -130,50 +100,52 @@ func Equal(t testing.TB, found interface{}, expected interface{}, message ...str
 			foundStr := fmt.Sprintf("%v", found)
 			expectedStr := fmt.Sprintf("%v", expected)
 			if foundStr != expectedStr {
-				message := fmt.Sprintf("Custom Equal expected %v to equal %v. %s", found, expected, msg)
-				t.Error(message)
+				mainMessage := fmt.Sprintf("Expected %v to equal %v", found, expected)
+				panic(messagesToStringP(mainMessage, messages...))
 			}
 			return
 		}
 
 		if found != expected {
-			t.Errorf("Custom Equal expected %v to equal %v. %s", found, expected, msg)
+			mainMessage := fmt.Sprintf("Custom Equal expected %v to equal %v", found, expected)
+			panic(messagesToStringP(mainMessage, messages...))
 		}
 	}
 }
 
 // Match fails if the the provided exprStr is not found in the provided str value as
 // a regular expression.
-func Match(t testing.TB, exprStr string, str string) {
+func MatchP(exprStr string, str string) {
 	matched, _ := regexp.MatchString(exprStr, str)
+	fmt.Println("MATCH P WITH:", matched)
 	if !matched {
-		t.Errorf("Expected: \"%v\", but received: \"%v\"", exprStr, str)
+		panic(fmt.Sprintf("Expected: \"%v\", but received: \"%v\"", exprStr, str))
 	}
 }
 
 // True fails if the provided value is not true
-func True(t testing.TB, value bool, messages ...string) {
-	isTrue(t, value, fmt.Sprintf("Expected %v to be true", value), messages...)
+func TrueP(value bool, messages ...string) {
+	isTrueP(value, fmt.Sprintf("Expected %v to be true", value), messages...)
 }
 
 // False fails if the provided value is not false
-func False(t testing.TB, value bool, messages ...string) {
-	isTrue(t, !value, fmt.Sprintf("Expected %v to be false", value), messages...)
+func FalseP(value bool, messages ...string) {
+	isTrueP(!value, fmt.Sprintf("Expected %v to be false", value), messages...)
 }
 
 // NotNil fails if the provided value is nil
-func NotNil(t testing.TB, value interface{}, messages ...string) {
+func NotNilP(value interface{}, messages ...string) {
 	if value == nil {
 		msg := fmt.Sprintf("Expected %v to not be nil", value)
-		t.Errorf(messagesToString(msg, messages...))
+		panic(messagesToStringP(msg, messages...))
 	}
 }
 
 // Nil fails if the provided value is not nil
-func Nil(t testing.TB, value interface{}, messages ...string) {
+func NilP(value interface{}, messages ...string) {
 	if value != nil {
 		typeOf := reflect.TypeOf(value).String()
 		msg := fmt.Sprintf("Expected %v of type: %v to be nil", value, typeOf)
-		t.Errorf(messagesToString(msg, messages...))
+		panic(messagesToStringP(msg, messages...))
 	}
 }
