@@ -37,7 +37,6 @@ func PanicP(expr string, handler func()) {
 		r := recover()
 		if r != nil {
 			var err error
-			fmt.Println("Recovered in f", r)
 			// find out exactly what the error was and set err
 			switch x := r.(type) {
 			case string:
@@ -117,7 +116,6 @@ func Equal(found interface{}, expected interface{}, messages ...string) {
 // a regular expression.
 func Match(exprStr string, str string) {
 	matched, _ := regexp.MatchString(exprStr, str)
-	fmt.Println("MATCH P WITH:", matched)
 	if !matched {
 		panic(fmt.Sprintf("Expected: \"%v\", but received: \"%v\"", exprStr, str))
 	}
