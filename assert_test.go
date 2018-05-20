@@ -6,6 +6,8 @@ import (
 	"testing"
 )
 
+type foo struct{}
+
 type fakeConst int
 
 const (
@@ -38,6 +40,24 @@ func TestPanicAsserts(t *testing.T) {
 	})
 
 	t.Run("NotNil", func(t *testing.T) {
+		// The following is NOT TRUE: returnNil() != nil
+		// This makes me such a sad panda.
+		var returnNil = func() *foo {
+			return nil
+		}
+
+		t.Run("Object results should be nil", func(t *testing.T) {
+			t.Skip("Please help make the following call fail (and the test pass)")
+			defer ensurePanicWith("Expected nil return value to fail NoNil check")()
+			assert.NotNil(returnNil())
+		})
+
+		t.Run("Failure", func(t *testing.T) {
+			defer ensurePanicWith("Expected <nil> to not be nil")()
+			assert.NotNil(nil)
+
+		})
+
 		t.Run("Success", func(t *testing.T) {
 			assert.NotNil(true)
 		})
