@@ -133,15 +133,33 @@ func False(value bool, messages ...string) {
 
 // NotNil fails if the provided value is nil
 func NotNil(value interface{}, messages ...string) {
-	if value == nil {
+	if isNil(value) {
 		msg := fmt.Sprintf("Expected %v to not be nil", value)
 		panic(messagesToStringP(msg, messages...))
 	}
 }
 
+func isNil(actual interface{}) bool {
+	if actual == nil {
+		return true
+	}
+
+	value := reflect.ValueOf(actual)
+	kind := value.Kind()
+	nilable := kind == reflect.Slice ||
+		kind == reflect.Chan ||
+		kind == reflect.Func ||
+		kind == reflect.Ptr ||
+		kind == reflect.Map
+
+	// Careful: reflect.Value.IsNil() will panic unless it's an interface, chan, map, func, slice, or ptr
+	// Reference: http://golang.org/pkg/reflect/#Value.IsNil
+	return nilable && value.IsNil()
+}
+
 // Nil fails if the provided value is not nil
 func Nil(value interface{}, messages ...string) {
-	if value != nil {
+	if !isNil(value) {
 		typeOf := reflect.TypeOf(value).String()
 		msg := fmt.Sprintf("Expected %v of type: %v to be nil", value, typeOf)
 		panic(messagesToStringP(msg, messages...))
