@@ -9,7 +9,7 @@ import (
 	"regexp"
 )
 
-func messagesToStringP(mainMessage string, optMessages ...string) string {
+func messagesToString(mainMessage string, optMessages ...string) string {
 	switch len(optMessages) {
 	case 0:
 		return mainMessage
@@ -23,16 +23,16 @@ func messagesToStringP(mainMessage string, optMessages ...string) string {
 	return ""
 }
 
-func isTrueP(value bool, mainMessage string, messages ...string) {
+func isTrue(value bool, mainMessage string, messages ...string) {
 	if !value {
-		msg := messagesToStringP(mainMessage, messages...)
+		msg := messagesToString(mainMessage, messages...)
 		panic(errors.New(msg).Error())
 	}
 }
 
 // Panic fails if the provided handler does not trigger a panic that includes an error
 // or message that matches the provided expression string.
-func PanicP(expr string, handler func()) {
+func Panic(expr string, handler func()) {
 	defer func() {
 		r := recover()
 		if r != nil {
@@ -58,7 +58,7 @@ func PanicP(expr string, handler func()) {
 func StrictEqual(found interface{}, expected interface{}, messages ...string) {
 	if found != expected {
 		mainMessage := fmt.Sprintf("Expected %v to STRICTLY equal %v", found, expected)
-		panic(messagesToStringP(mainMessage, messages...))
+		panic(messagesToString(mainMessage, messages...))
 	}
 }
 
@@ -100,14 +100,14 @@ func Equal(found interface{}, expected interface{}, messages ...string) {
 			expectedStr := fmt.Sprintf("%v", expected)
 			if foundStr != expectedStr {
 				mainMessage := fmt.Sprintf("Expected %v to equal %v", found, expected)
-				panic(messagesToStringP(mainMessage, messages...))
+				panic(messagesToString(mainMessage, messages...))
 			}
 			return
 		}
 
 		if found != expected {
 			mainMessage := fmt.Sprintf("Custom Equal expected %v to equal %v", found, expected)
-			panic(messagesToStringP(mainMessage, messages...))
+			panic(messagesToString(mainMessage, messages...))
 		}
 	}
 }
@@ -123,19 +123,19 @@ func Match(exprStr string, str string) {
 
 // True fails if the provided value is not true
 func True(value bool, messages ...string) {
-	isTrueP(value, fmt.Sprintf("Expected %v to be true", value), messages...)
+	isTrue(value, fmt.Sprintf("Expected %v to be true", value), messages...)
 }
 
 // False fails if the provided value is not false
 func False(value bool, messages ...string) {
-	isTrueP(!value, fmt.Sprintf("Expected %v to be false", value), messages...)
+	isTrue(!value, fmt.Sprintf("Expected %v to be false", value), messages...)
 }
 
 // NotNil fails if the provided value is nil
 func NotNil(value interface{}, messages ...string) {
 	if isNil(value) {
 		msg := fmt.Sprintf("Expected %v to not be nil", value)
-		panic(messagesToStringP(msg, messages...))
+		panic(messagesToString(msg, messages...))
 	}
 }
 
@@ -162,6 +162,6 @@ func Nil(value interface{}, messages ...string) {
 	if !isNil(value) {
 		typeOf := reflect.TypeOf(value).String()
 		msg := fmt.Sprintf("Expected %v of type: %v to be nil", value, typeOf)
-		panic(messagesToStringP(msg, messages...))
+		panic(messagesToString(msg, messages...))
 	}
 }
